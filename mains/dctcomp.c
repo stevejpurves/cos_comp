@@ -103,6 +103,7 @@ main(int argc, char **argv)
 	
 	/* quantization */
 	step = -1.;
+
 	uniQuant(f[0], npad1*npad2, error, &ave, &step, qx);
 
 	/* prefix encoding */
