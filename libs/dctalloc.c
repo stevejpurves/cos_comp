@@ -29,7 +29,6 @@ Author:		Tong Chen, 06/01/95
 /**************** end self doc ********************************/
 #include "../includes/comp.h"
 
-
 float **dctivAlloc(int n)
 /*****************************************************************************
 dctivAlloc - generate the transform table for dctiv

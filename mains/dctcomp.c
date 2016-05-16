@@ -79,6 +79,16 @@ main(int argc, char **argv)
 	    for(i1=n1; i1<npad1; i1++) f[i2][i1] = 0.;
 	 }
 	
+
+/* test output of raw data */
+FILE *fp;
+fp = fopen("temp","w");
+for (i1 = 0; i1 < n2; i1++){
+	fwrite(f[i1], sizeof(float), n1, fp);
+}
+fclose(fp);
+/***************************/
+
 	/* pad with zeroes */
 	for(i2=n2; i2<npad2; i2++)
 		for(i1=0; i1<npad1; i1++)
