@@ -1,0 +1,32 @@
+{
+  "name": "cos_comp",
+  "version": "1.0.0",
+  "description": "This repo transpiles a standalone version of the SU tools for cosine compression into JavaScript. There is a C version of the tools under the folder \"c\".",
+  "main": "dctcomp.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gganssle/cos_comp.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/gganssle/cos_comp/issues"
+  },
+  "homepage": "https://github.com/gganssle/cos_comp#readme",
+  "devDependencies": {
+    "chai": "^3.5.0",
+    "jasmine-core": "^2.4.1",
+    "karma": "^0.13.22",
+    "karma-chai": "^0.1.0",
+    "karma-chrome-launcher": "^1.0.1",
+    "karma-jasmine": "^1.0.2",
+    "karma-mocha": "^1.0.1",
+    "karma-mocha-reporter": "^2.0.3"
+  }
+}

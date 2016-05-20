@@ -1,0 +1,1 @@
+int compress(int n1, int n2, int blocksize1, int blocksize2);
