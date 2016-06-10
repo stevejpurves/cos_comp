@@ -31,14 +31,63 @@ NULL};
  */
 
 /**************** end self doc ********************************/
-int decompress(int nsize, int n1, int n2, int blocksize1, int blocksize2, int ave, int step) 
+int decompress(void* input, void* output) 
 {	
 	int npad1, npad2, nblock1, nblock2;
 	int i1, i2, j1, j2, ibeg1, ibeg2, iblock1, iblock2, nmax;
+	int* pInt;
+	float* pFloat;
 	float **f, **g, **c1, **c2;
 	int *qx;
 	memBUFF *ibuff, *obuff;
+		
+	int nsize, n1, n2, blocksize1, blocksize2;
+	float ave, step;
+	unsigned int offset;
+	const unsigned int FLOAT_HDR = 5*sizeof(int);
+	const unsigned int DATA_START = FLOAT_HDR + 2*sizeof(float);
 	
+	printf("Input Pointer %u\n", (unsigned int)input);
+	printf("Input Pointer %u\n", (unsigned int)output);
+		
+	pInt = (int*)input;
+		
+	nsize = *pInt++;
+	n1 = *pInt++;
+	n2 = *pInt++;
+	blocksize1 = *pInt++;
+	blocksize2 = *pInt++;
+	pFloat = (float*)(input+FLOAT_HDR);
+	ave = *pFloat++;
+	step = *pFloat;
+	
+	printf("Reading header data\n");
+	printf("nsize %u\n", nsize);
+	printf("n1 %d\n", n1);
+	printf("n2 %d\n", n2);
+	printf("blocksize1 %d\n", blocksize1);
+	printf("blocksize2 %d\n", blocksize2);
+	printf("ave %f\n", ave);
+	printf("ave %f\n", step);
+	
+	return 0;
+
+	/* get the parameters */
+	// fread(&nsize, sizeof(int), 1, input);
+	// fread(&n1, sizeof(int), 1, input);
+	// fread(&n2, sizeof(int), 1, input);
+	// fread(&blocksize1, sizeof(int), 1, input);
+	// fread(&blocksize2, sizeof(int), 1, input);
+	// fread(&ave, sizeof(float), 1, input);
+	// fread(&step, sizeof(float), 1, input);
+	
+	
+		
+	/* read data */
+	ibuff = buffAlloc1(nsize);
+	fread(ibuff->code, sizeof(char), nsize, stdin);	
+		
+
 	/* regular sizes */
 	nblock1 = (n1-1)/blocksize1 + 1;
 	nblock2 = (n2-1)/blocksize2 + 1;
@@ -52,11 +101,7 @@ int decompress(int nsize, int n1, int n2, int blocksize1, int blocksize2, int av
 
 	/* allocate buffers */
 	nmax = 2*npad1*npad2;
-	ibuff = buffAlloc1(nsize);
 	obuff = buffAlloc1(nmax);
-	
-	/* read data */
-	fread(ibuff->code, sizeof(char), nsize, stdin);
 	
 	/* Huffman decoding */
 	if(huffDecompress(ibuff, obuff) == MEM_EOB) 
