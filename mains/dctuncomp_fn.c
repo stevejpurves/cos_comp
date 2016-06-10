@@ -44,8 +44,8 @@ int decompress(void* input, void* output)
 	int nsize, n1, n2, blocksize1, blocksize2;
 	float ave, step;
 	unsigned int offset;
-	const unsigned int FLOAT_HDR = 5*sizeof(int);
-	const unsigned int DATA_START = FLOAT_HDR + 2*sizeof(float);
+	const unsigned int INT_HDR_SIZE = 5*sizeof(int);
+	const unsigned int TOTAL_HDR_SIZE = INT_HDR_SIZE + 2*sizeof(float);
 	
 	printf("Input Pointer %u\n", (unsigned int)input);
 	printf("Input Pointer %u\n", (unsigned int)output);
@@ -69,25 +69,12 @@ int decompress(void* input, void* output)
 	printf("blocksize2 %d\n", blocksize2);
 	printf("ave %f\n", ave);
 	printf("ave %f\n", step);
-	
-	return 0;
-
-	/* get the parameters */
-	// fread(&nsize, sizeof(int), 1, input);
-	// fread(&n1, sizeof(int), 1, input);
-	// fread(&n2, sizeof(int), 1, input);
-	// fread(&blocksize1, sizeof(int), 1, input);
-	// fread(&blocksize2, sizeof(int), 1, input);
-	// fread(&ave, sizeof(float), 1, input);
-	// fread(&step, sizeof(float), 1, input);
-	
-	
 		
 	/* read data */
 	ibuff = buffAlloc1(nsize);
-	fread(ibuff->code, sizeof(char), nsize, stdin);	
+	// fread(ibuff->code, sizeof(char), nsize, input + TOTAL_HDR_SIZE);
+	memcpy(ibuff->code, input + TOTAL_HDR_SIZE, nsize);
 		
-
 	/* regular sizes */
 	nblock1 = (n1-1)/blocksize1 + 1;
 	nblock2 = (n2-1)/blocksize2 + 1;
@@ -144,9 +131,11 @@ int decompress(void* input, void* output)
 		    f[i2][i1] = g[j2][j1];
 	   }
 
-	for(i2=0; i2<n2; i2++)
-	   fwrite(f[i2], sizeof(float), n1, stdout);
-	
+	for(i2=0; i2<n2; i2++) {
+		memcpy(output, f[i2], n1*sizeof(float));
+		// fwrite(f[i2], sizeof(float), n1, stdout);
+	}
+	   	
 	return EXIT_SUCCESS;
 }
 
