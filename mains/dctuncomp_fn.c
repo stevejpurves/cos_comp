@@ -57,7 +57,7 @@ int decompress(void* input, void* output)
 	n2 = *pInt++;
 	blocksize1 = *pInt++;
 	blocksize2 = *pInt++;
-	pFloat = (float*)(input+FLOAT_HDR);
+	pFloat = (float*)(input + INT_HDR_SIZE);
 	ave = *pFloat++;
 	step = *pFloat;
 	
@@ -69,12 +69,10 @@ int decompress(void* input, void* output)
 	printf("blocksize2 %d\n", blocksize2);
 	printf("ave %f\n", ave);
 	printf("ave %f\n", step);
-		
-	/* read data */
+	
 	ibuff = buffAlloc1(nsize);
-	// fread(ibuff->code, sizeof(char), nsize, input + TOTAL_HDR_SIZE);
 	memcpy(ibuff->code, input + TOTAL_HDR_SIZE, nsize);
-		
+	
 	/* regular sizes */
 	nblock1 = (n1-1)/blocksize1 + 1;
 	nblock2 = (n2-1)/blocksize2 + 1;
@@ -131,15 +129,21 @@ int decompress(void* input, void* output)
 		    f[i2][i1] = g[j2][j1];
 	   }
 
+	
+	pFloat = (float*)output;
 	for(i2=0; i2<n2; i2++) {
-		memcpy(output, f[i2], n1*sizeof(float));
-		// fwrite(f[i2], sizeof(float), n1, stdout);
+		memcpy((void*)pFloat, (void*)f[i2], n1*sizeof(float));
+		pFloat += n1;
 	}
-	   	
+	
+	pFloat = (float*)output;
+	for(i2=0; i2<10; i2++) {
+		for(i1=0; i1<1; i1++) {
+			printf("f[] %f\n", *f[i2]);
+			printf("out %f\n", pFloat[i1]);		
+		}
+		pFloat += n1;
+	}
+	
 	return EXIT_SUCCESS;
 }
-
-
-
-
-

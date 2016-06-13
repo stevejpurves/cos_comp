@@ -25,11 +25,6 @@ var EmscEnv = {};
 // // Free memory
 // Module._free(dataHeap.byteOffset);
 
-
-
-
-
-
 describe("DCT Decompress", function() {	
 	
 	it("decompress function should be visible", function() {
@@ -43,12 +38,13 @@ describe("DCT Decompress", function() {
 		var inputBuffer, outputBuffer;
 		var n1 = 751, n2 = 1200;
 		var SIZE_OF_FLOAT = 4;
+		var imageSizeInBytes = n1*n2*SIZE_OF_FLOAT;
 		
 		var decompress = null;
 		
 		before(function (done) {
 			decompress = Emsc.cwrap('decompress', 'number', ['number','number']);
-			outputBuffer = new ArrayBuffer(SIZE_OF_FLOAT*n1*n2);
+			outputBuffer = new ArrayBuffer(imageSizeInBytes);
 			fs.readFile(filename, function(err, buffer) {
 				if (err) return done(err);
 				console.log("length of buffer", buffer.length)
@@ -62,9 +58,13 @@ describe("DCT Decompress", function() {
 		});
 		
 		it('can decompress', function() {
+			function alloc(buffer) {
+				return new Uint8Array(Emsc.HEAPU8.buffer, Emsc._malloc(buffer.byteLength), buffer.byteLength);
+			}
+			
 			function allocAndCopy(buffer) {
-				var dataHeap = new Uint8Array(Emsc.HEAPU8.buffer, Emsc._malloc(buffer.byteLength), buffer.byteLength);
-				dataHeap.set(new Uint8Array(buffer));			
+				var dataHeap = alloc(buffer);
+				dataHeap.set(new Uint8Array(buffer));	
 				return dataHeap;	
 			}
 			
@@ -73,20 +73,37 @@ describe("DCT Decompress", function() {
 
 			var headerInts = new Uint32Array(inputBuffer.slice(0, 20));
 			var headerFloats = new Float32Array(inputBuffer.slice(20,28));			
-			var results = new Float32Array(outputBuffer);
+			
 			
 			console.log("Header Ints", headerInts)
 			console.log("Header Floats", headerFloats)
 			
 			var input = allocAndCopy(inputBuffer);
-			var output = allocAndCopy(outputBuffer);
+			var output = alloc(outputBuffer);
 			
-			console.log("Floats before", results.subarray(0, 20))
+			console.log("bbbs")
+			console.log("Input Buffer", input.subarray(0, 50))
 			
 			var rt = decompress(input.byteOffset, output.byteOffset);
 			
+			var min = 999999999999, max = -1;
 			console.log("return code", rt)
-			console.log("Floats after", results.subarray(0,20))
+			for (var i = 0; i < 10; i++) {
+				console.log("JS OUT", Emsc.getValue(output.byteOffset + i, 'float'));
+			}
+			console.log("Chars min", min)
+			console.log("Chars max", max)
+			
+			var outputFloats = new Float32Array(Emsc.HEAPU8.buffer, output.byteOffset, outputBuffer.length);
+			min = 999999999999, max = -1;
+			for (var i = 0; i < 10; i++) {
+				console.log("JS FLT", outputFloats[i])
+			}
+			console.log("Floats min", min)
+			console.log("Floats max", max)
+			
+			Emsc._free(input.byteOffset);
+			Emsc._free(output.byteOffset);
 		})
 		
 	});
