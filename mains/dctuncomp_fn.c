@@ -31,13 +31,47 @@ NULL};
  */
 
 /**************** end self doc ********************************/
-int decompress(int nsize, int n1, int n2, int blocksize1, int blocksize2, int ave, int step) 
+int decompress(void* input, void* output) 
 {	
 	int npad1, npad2, nblock1, nblock2;
 	int i1, i2, j1, j2, ibeg1, ibeg2, iblock1, iblock2, nmax;
+	int* pInt;
+	float* pFloat;
 	float **f, **g, **c1, **c2;
 	int *qx;
 	memBUFF *ibuff, *obuff;
+		
+	int nsize, n1, n2, blocksize1, blocksize2;
+	float ave, step;
+	unsigned int offset;
+	const unsigned int INT_HDR_SIZE = 5*sizeof(int);
+	const unsigned int TOTAL_HDR_SIZE = INT_HDR_SIZE + 2*sizeof(float);
+	
+	printf("Input Pointer %u\n", (unsigned int)input);
+	printf("Input Pointer %u\n", (unsigned int)output);
+		
+	pInt = (int*)input;
+		
+	nsize = *pInt++;
+	n1 = *pInt++;
+	n2 = *pInt++;
+	blocksize1 = *pInt++;
+	blocksize2 = *pInt++;
+	pFloat = (float*)(input + INT_HDR_SIZE);
+	ave = *pFloat++;
+	step = *pFloat;
+	
+	printf("Reading header data\n");
+	printf("nsize %u\n", nsize);
+	printf("n1 %d\n", n1);
+	printf("n2 %d\n", n2);
+	printf("blocksize1 %d\n", blocksize1);
+	printf("blocksize2 %d\n", blocksize2);
+	printf("ave %f\n", ave);
+	printf("ave %f\n", step);
+	
+	ibuff = buffAlloc1(nsize);
+	memcpy(ibuff->code, input + TOTAL_HDR_SIZE, nsize);
 	
 	/* regular sizes */
 	nblock1 = (n1-1)/blocksize1 + 1;
@@ -52,11 +86,7 @@ int decompress(int nsize, int n1, int n2, int blocksize1, int blocksize2, int av
 
 	/* allocate buffers */
 	nmax = 2*npad1*npad2;
-	ibuff = buffAlloc1(nsize);
 	obuff = buffAlloc1(nmax);
-	
-	/* read data */
-	fread(ibuff->code, sizeof(char), nsize, stdin);
 	
 	/* Huffman decoding */
 	if(huffDecompress(ibuff, obuff) == MEM_EOB) 
@@ -99,13 +129,12 @@ int decompress(int nsize, int n1, int n2, int blocksize1, int blocksize2, int av
 		    f[i2][i1] = g[j2][j1];
 	   }
 
-	for(i2=0; i2<n2; i2++)
-	   fwrite(f[i2], sizeof(float), n1, stdout);
+	
+	pFloat = (float*)output;
+	for(i2=0; i2<n2; i2++) {
+		memcpy((void*)pFloat, (void*)f[i2], n1*sizeof(float));
+		pFloat += n1;
+	}
 	
 	return EXIT_SUCCESS;
 }
-
-
-
-
-
