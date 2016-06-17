@@ -20,6 +20,7 @@
   },
   "homepage": "https://github.com/gganssle/cos_comp#readme",
   "devDependencies": {
+    "binary-file": "^0.2.1",
     "chai": "^3.5.0",
     "jasmine-core": "^2.4.1",
     "karma": "^0.13.22",

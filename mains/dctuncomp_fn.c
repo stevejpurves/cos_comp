@@ -136,14 +136,5 @@ int decompress(void* input, void* output)
 		pFloat += n1;
 	}
 	
-	pFloat = (float*)output;
-	for(i2=0; i2<10; i2++) {
-		for(i1=0; i1<1; i1++) {
-			printf("f[] %f\n", *f[i2]);
-			printf("out %f\n", pFloat[i1]);		
-		}
-		pFloat += n1;
-	}
-	
 	return EXIT_SUCCESS;
 }

@@ -2,30 +2,30 @@ var expect = require('chai').expect;
 var Emsc = require('../out/dctuncomp.js');
 var fs = require('fs');
 var path = require('path');
+var BinaryFile =  require('binary-file')
 
 
-var EmscEnv = {};
-
-
-// Create example data to test float_multiply_array
-// var data = new Float32Array([1, 2, 3, 4, 5]);
-
-// Get data byte size, allocate memory on Emscripten heap, and get pointer
-// var nDataBytes = data.length * data.BYTES_PER_ELEMENT;
-// var dataPtr = Emsc._malloc(nDataBytes);
-
-// Copy data to Emscripten heap (directly accessed from Module.HEAPU8)
-// var dataHeap = new Uint8Array(Emsc.HEAPU8.buffer, dataPtr, nDataBytes);
-// dataHeap.set(new Uint8Array(data.buffer));
-
-// Call function and get result
-// float_multiply_array(2, dataHeap.byteOffset, data.length);
-// var result = new Float32Array(dataHeap.buffer, dataHeap.byteOffset, data.length);
-
-// // Free memory
-// Module._free(dataHeap.byteOffset);
+var DCTComp = (function(emsc) {
+	
+	var decompFn = Emsc.cwrap('decompress', 'number', ['number','number']);
+	
+	return {
+		Emsc: emsc,
+		alloc: function(length) {
+			return new Uint8Array(Emsc.HEAPU8.buffer, Emsc._malloc(length), length);
+		},
+		allocAndCopy: function allocAndCopy(buffer) {
+			var newBufferOnHeap = this.alloc(buffer.byteLength);
+			newBufferOnHeap.set(new Uint8Array(buffer));	
+			return newBufferOnHeap;
+		},
+		decompress: decompFn
+	};
+	
+})(Emsc);
 
 describe("DCT Decompress", function() {	
+	this.timeout(20000)
 	
 	it("decompress function should be visible", function() {
 		expect(Emsc._decompress).to.not.be.undefined;
@@ -43,8 +43,7 @@ describe("DCT Decompress", function() {
 		var decompress = null;
 		
 		before(function (done) {
-			decompress = Emsc.cwrap('decompress', 'number', ['number','number']);
-			outputBuffer = new ArrayBuffer(imageSizeInBytes);
+			// decompress = Emsc.cwrap('decompress', 'number', ['number','number']);
 			fs.readFile(filename, function(err, buffer) {
 				if (err) return done(err);
 				console.log("length of buffer", buffer.length)
@@ -57,63 +56,48 @@ describe("DCT Decompress", function() {
 			})
 		});
 		
-		it('can decompress', function() {
-			function alloc(buffer) {
-				return new Uint8Array(Emsc.HEAPU8.buffer, Emsc._malloc(buffer.byteLength), buffer.byteLength);
-			}
-			
-			function allocAndCopy(buffer) {
-				var dataHeap = alloc(buffer);
-				dataHeap.set(new Uint8Array(buffer));	
-				return dataHeap;	
-			}
-			
+		it('can decompress', function(done) {
 			var headerLength = inputBuffer.byteLength - 475858;
 			console.log("# Bytes in Header", headerLength)
 
 			var headerInts = new Uint32Array(inputBuffer.slice(0, 20));
 			var headerFloats = new Float32Array(inputBuffer.slice(20,28));			
-			
-			
+						
 			console.log("Header Ints", headerInts)
 			console.log("Header Floats", headerFloats)
 			
-			var input = allocAndCopy(inputBuffer);
-			var output = alloc(outputBuffer);
 			
-			console.log("bbbs")
-			console.log("Input Buffer", input.subarray(0, 50))
+			var begin = process.hrtime();
+			var input = DCTComp.allocAndCopy(inputBuffer);
+			var output = DCTComp.alloc(imageSizeInBytes);
+						
+			var start = process.hrtime();
+			var rt = DCTComp.decompress(input.byteOffset, output.byteOffset);
+			var elapsed = process.hrtime(start);
+			var totalElapsed = process.hrtime(begin);
 			
-			var rt = decompress(input.byteOffset, output.byteOffset);
 			
-			var min = 999999999999, max = -1;
-			console.log("return code", rt)
-			for (var i = 0; i < 10; i++) {
-				console.log("JS OUT", Emsc.getValue(output.byteOffset + i, 'float'));
-			}
-			console.log("Chars min", min)
-			console.log("Chars max", max)
-			
-			var outputFloats = new Float32Array(Emsc.HEAPU8.buffer, output.byteOffset, outputBuffer.length);
-			min = 999999999999, max = -1;
+			console.log("first 10 floats")
+			var outputFloats = new Float32Array(Emsc.HEAPU8.buffer, output.byteOffset, output.byteLength);		
+			var outputUchar = new Uint8Array(Emsc.HEAPU8.buffer, output.byteOffset, imageSizeInBytes);	
 			for (var i = 0; i < 10; i++) {
 				console.log("JS FLT", outputFloats[i])
 			}
-			console.log("Floats min", min)
-			console.log("Floats max", max)
-			
-			Emsc._free(input.byteOffset);
-			Emsc._free(output.byteOffset);
+			for (var i = 0; i < 10; i++) {
+				console.log("OUT", outputUchar[i])
+			}
+			console.log("output.byteLength", output.byteOffset, output.byteLength);
+			console.log("Decompression took", elapsed[1]/1e6, "ms")
+			console.log("Decompression + HEAP Setup took", totalElapsed[1]/1e6, "ms")
+
+			var wstream = fs.createWriteStream('output.bin');
+			wstream.write(new Buffer(outputUchar));
+			wstream.end()
+
+			wstream.on("finish", function() {
+				done();
+			})
 		})
-		
 	});
-	
-	
-	// it('should do what...', function (done) {
-		
-	// });
-	
-	
-	
 	
 })
